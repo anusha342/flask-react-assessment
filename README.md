@@ -76,3 +76,30 @@ pytest tests/test_api.py -v
 - React (frontend)
 - Axios (API calls)
 - pytest (testing)
+               -------My request to you plzz read this--------
+Due to the 5-minute limit, I could not cover all implementation details in the video.
+I have documented my approach, key decisions, and trade-offs in the README/PR description
+for better clarity.
+
+so i've mentioned that all points here!!!
+...
+
+### Approach
+- Used Flask for backend due to its lightweight nature and suitability for REST APIs.
+- Chose SQLite for simplicity and quick setup for the given scope.
+- Built the frontend using React functional components and hooks.
+- Used Axios for API calls for cleaner and more readable request handling.
+- Enabled CORS since frontend and backend run on different ports.
+
+### Key Decisions
+- Filtered comments by task_id to efficiently fetch task-specific comments.
+- Reused the same form component for create and edit actions to reduce duplication.
+- Added toast notifications to provide immediate feedback to users.
+- Wrote automated tests covering both success and error scenarios.
+
+### Trade-offs
+- Used client-side filtering; server-side pagination would be better for large datasets.
+- Validation is minimal; a dedicated validation library would be preferable in production.
+- Authentication was not implemented but can be added without major refactoring.
+
+ 
