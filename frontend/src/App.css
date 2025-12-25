@@ -562,3 +562,123 @@ body {
     min-width: calc(50% - 5px);
   }
 }
+
+/* Inline Comments Section */
+.task-comments {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.comments-list {
+  margin-bottom: 16px;
+}
+
+.comment-item-inline {
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+
+.comment-item-inline:last-child {
+  margin-bottom: 0;
+}
+
+.comment-header-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.comment-header-inline strong {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.comment-date-inline {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.comment-content-inline {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.comment-actions-inline {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.no-comments {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.comment-form-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+.comment-form-inline input,
+.comment-form-inline textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--card);
+  font-family: inherit;
+}
+
+.comment-form-inline textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.comment-form-inline input:focus,
+.comment-form-inline textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.comment-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Comments always visible on task */
+.task-comments-display {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.task-comments-display .comment-item-inline {
+  margin-bottom: 8px;
+  padding: 10px 12px;
+}
+
+.task-comments-display .comment-item-inline:last-child {
+  margin-bottom: 0;
+}
+
+.comment-meta-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}

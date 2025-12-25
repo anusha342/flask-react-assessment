@@ -12,21 +12,36 @@ function TaskManager() {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   
-  // Comments state
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [commentForm, setCommentForm] = useState({ content: '', author: '' });
+  // Comments state - now per task
+  const [showCommentFormId, setShowCommentFormId] = useState(null);
+  const [taskComments, setTaskComments] = useState({});
+  const [commentForm, setCommentForm] = useState({ content: '' });
   const [editingCommentId, setEditingCommentId] = useState(null);
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  // Fetch all comments for all tasks on load
+  const fetchAllComments = async (tasksList) => {
+    try {
+      const commentsMap = {};
+      for (const task of tasksList) {
+        const response = await axios.get(`${COMMENTS_API}?task_id=${task.id}`);
+        commentsMap[task.id] = response.data;
+      }
+      setTaskComments(commentsMap);
+    } catch (error) {
+      console.error('[Frontend] Error fetching comments:', error);
+    }
+  };
+
   const fetchTasks = async () => {
     try {
       const response = await axios.get(TASKS_API);
       console.log('[Frontend] Fetched tasks:', response.data);
       setTasks(response.data);
+      fetchAllComments(response.data);
     } catch (error) {
       console.error('[Frontend] Error fetching tasks:', error);
       toast.error('Failed to connect to server');
@@ -81,26 +96,20 @@ function TaskManager() {
     setFormData({ title: '', description: '', status: 'pending' });
   };
 
-  // Comments CRUD
-  const openComments = async (task) => {
-    setSelectedTask(task);
-    try {
-      const response = await axios.get(`${COMMENTS_API}?task_id=${task.id}`);
-      console.log('[Frontend] Fetched comments:', response.data);
-      setComments(response.data);
-    } catch (error) {
-      toast.error('Failed to load comments');
+  // Comments - toggle form only
+  const toggleCommentForm = (task) => {
+    if (showCommentFormId === task.id) {
+      setShowCommentFormId(null);
+      setEditingCommentId(null);
+      setCommentForm({ content: '' });
+      return;
     }
-  };
-
-  const closeComments = () => {
-    setSelectedTask(null);
-    setComments([]);
-    setCommentForm({ content: '', author: '' });
+    setShowCommentFormId(task.id);
     setEditingCommentId(null);
+    setCommentForm({ content: '' });
   };
 
-  const handleCommentSubmit = async (e) => {
+  const handleCommentSubmit = async (e, taskId) => {
     e.preventDefault();
     if (!commentForm.content.trim()) {
       toast.warning('Please enter a comment');
@@ -108,38 +117,49 @@ function TaskManager() {
     }
     try {
       if (editingCommentId) {
-        const response = await axios.put(`${COMMENTS_API}/${editingCommentId}`, commentForm);
+        const response = await axios.put(`${COMMENTS_API}/${editingCommentId}`, { content: commentForm.content });
         console.log('[Frontend] Updated comment:', response.data);
-        setComments(comments.map(c => c.id === editingCommentId ? response.data : c));
+        setTaskComments(prev => ({
+          ...prev,
+          [taskId]: prev[taskId].map(c => c.id === editingCommentId ? response.data : c)
+        }));
         toast.success('Comment updated');
         setEditingCommentId(null);
       } else {
         const response = await axios.post(COMMENTS_API, {
-          task_id: selectedTask.id,
+          task_id: taskId,
           content: commentForm.content,
-          author: commentForm.author || 'Anonymous'
+          author: 'Anonymous'
         });
         console.log('[Frontend] Created comment:', response.data);
-        setComments([...comments, response.data]);
+        setTaskComments(prev => ({
+          ...prev,
+          [taskId]: [...(prev[taskId] || []), response.data]
+        }));
         toast.success('Comment added');
       }
-      setCommentForm({ content: '', author: '' });
+      setCommentForm({ content: '' });
+      setShowCommentFormId(null);
     } catch (error) {
       toast.error('Failed to save comment');
     }
   };
 
-  const handleEditComment = (comment) => {
+  const handleEditComment = (comment, taskId) => {
+    setShowCommentFormId(taskId);
     setEditingCommentId(comment.id);
-    setCommentForm({ content: comment.content, author: comment.author });
+    setCommentForm({ content: comment.content });
   };
 
-  const handleDeleteComment = async (id) => {
+  const handleDeleteComment = async (id, taskId) => {
     if (!window.confirm('Delete this comment?')) return;
     try {
       await axios.delete(`${COMMENTS_API}/${id}`);
       console.log('[Frontend] Deleted comment:', id);
-      setComments(comments.filter(c => c.id !== id));
+      setTaskComments(prev => ({
+        ...prev,
+        [taskId]: prev[taskId].filter(c => c.id !== id)
+      }));
       toast.success('Comment deleted');
     } catch (error) {
       toast.error('Failed to delete comment');
@@ -148,7 +168,8 @@ function TaskManager() {
 
   const cancelCommentEdit = () => {
     setEditingCommentId(null);
-    setCommentForm({ content: '', author: '' });
+    setCommentForm({ content: '' });
+    setShowCommentFormId(null);
   };
 
   const filtered = filter === 'all' ? tasks : tasks.filter(t => t.status === filter);
@@ -229,82 +250,66 @@ function TaskManager() {
                 <span className={`status-badge status-${task.status}`}>{task.status.replace('-', ' ')}</span>
               </div>
               {task.description && <p className="task-description">{task.description}</p>}
+              
+              {/* Comments always visible */}
+              {(taskComments[task.id] || []).length > 0 && (
+                <div className="task-comments-display">
+                  {(taskComments[task.id] || []).map(comment => (
+                    <div key={comment.id} className="comment-item-inline">
+                      <p className="comment-content-inline">{comment.content}</p>
+                      <div className="comment-meta-inline">
+                        <span className="comment-date-inline">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                        <div className="comment-actions-inline">
+                          <button className="btn-link" onClick={() => handleEditComment(comment, task.id)}>Edit</button>
+                          <button className="btn-link delete" onClick={() => handleDeleteComment(comment.id, task.id)}>Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="task-footer">
                 <span className="task-date">{new Date(task.created_at).toLocaleDateString()}</span>
                 <div className="task-actions">
-                  <button className="btn btn-comment" onClick={() => openComments(task)}>Comments</button>
+                  <button className="btn btn-comment" onClick={() => toggleCommentForm(task)}>
+                    {showCommentFormId === task.id ? 'Cancel' : 'Add Comment'}
+                  </button>
                   <button className="btn btn-edit" onClick={() => handleEdit(task)}>Edit</button>
                   <button className="btn btn-delete" onClick={() => handleDelete(task.id)}>Delete</button>
                 </div>
               </div>
+              
+              {/* Comment Form - only when clicked */}
+              {showCommentFormId === task.id && (
+                <div className="task-comments">
+                  <form className="comment-form-inline" onSubmit={(e) => handleCommentSubmit(e, task.id)}>
+                    <textarea
+                      placeholder="Write a comment..."
+                      value={commentForm.content}
+                      onChange={(e) => setCommentForm({ content: e.target.value })}
+                      autoFocus
+                    />
+                    <div className="comment-form-actions">
+                      <button type="submit" className="btn btn-primary btn-sm">
+                        {editingCommentId ? 'Update' : 'Add'}
+                      </button>
+                      {editingCommentId && (
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={cancelCommentEdit}>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              )}
             </div>
           ))
         )}
       </div>
 
-      {/* Comments Modal */}
-      {selectedTask && (
-        <div className="modal-overlay" onClick={closeComments}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Comments: {selectedTask.title}</h2>
-              <button className="close-btn" onClick={closeComments}>&times;</button>
-            </div>
-            
-            <div className="comment-form-modal">
-              <form onSubmit={handleCommentSubmit}>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="Your name (optional)"
-                    value={commentForm.author}
-                    onChange={(e) => setCommentForm({ ...commentForm, author: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <textarea
-                    placeholder="Write a comment..."
-                    value={commentForm.content}
-                    onChange={(e) => setCommentForm({ ...commentForm, content: e.target.value })}
-                  />
-                </div>
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    {editingCommentId ? 'Update' : 'Add Comment'}
-                  </button>
-                  {editingCommentId && (
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={cancelCommentEdit}>
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-
-            <div className="comments-list-modal">
-              {comments.length === 0 ? (
-                <div className="no-comments-modal">No comments yet</div>
-              ) : (
-                comments.map(comment => (
-                  <div key={comment.id} className="comment-item">
-                    <div className="comment-header-modal">
-                      <strong>{comment.author}</strong>
-                      <span className="comment-date-modal">
-                        {new Date(comment.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="comment-content-modal">{comment.content}</p>
-                    <div className="comment-actions-modal">
-                      <button className="btn-link" onClick={() => handleEditComment(comment)}>Edit</button>
-                      <button className="btn-link delete" onClick={() => handleDeleteComment(comment.id)}>Delete</button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
