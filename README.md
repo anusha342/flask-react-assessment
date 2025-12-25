@@ -76,13 +76,7 @@ pytest tests/test_api.py -v
 - React (frontend)
 - Axios (API calls)
 - pytest (testing)
-               -------My request to you plzz read this--------
-Due to the 5-minute limit, I could not cover all implementation details in the video.
-I have documented my approach, key decisions, and trade-offs in the README/PR description
-for better clarity.
 
-so i've mentioned that all points here!!!
-...
 
 ### Approach
 - Used Flask for backend due to its lightweight nature and suitability for REST APIs.
