@@ -7,12 +7,12 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>My Tasks</h1>
-        <p>Simple. Organized. Done.</p>
+        <h1>Task Manager</h1>
+        <p>Your tasks, beautifully managed</p>
       </div>
 
       <TaskManager />
-      
+
       <ToastContainer
         position="bottom-center"
         autoClose={2500}
