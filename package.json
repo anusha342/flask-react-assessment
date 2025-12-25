@@ -1,0 +1,13 @@
+{
+  "name": "task-manager-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack Task Manager with React and Flask",
+  "scripts": {
+    "start": "concurrently \"cd backend && python app.py\" \"cd frontend && npm start\"",
+    "backend": "cd backend && python app.py",
+    "frontend": "cd frontend && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
